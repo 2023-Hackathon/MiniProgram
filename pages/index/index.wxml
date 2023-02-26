@@ -1,7 +1,10 @@
 <!--index.wxml-->
 <view class="container">
-  <button bindtap="bindOpenBtTap">Open bluetooth</button>
-  <button bindtap="bindStartDiscovery">start discovery</button>
-  <button bindtap="bindEndDiscovery">end discovery</button>
-  <button bindtap="bindCloseBtTap">Close Bluetooth</button>
+  <!-- <button bindtap="bindOpenBtTap">Open bluetooth</button> -->
+  <button bindtap="bindStartDiscovery">start discover band</button>
+  <button bindtap="bindDiscoverEsp">start discover esp</button>
+  <!-- <button bindtap="bindEndDiscovery">end discovery</button> -->
+  <!-- <button bindtap="bindCloseBtTap">Close Bluetooth</button> -->
+  <button bindtap="bindPrintHeartrateData">PrintHeartrateData</button>
+  <button bindtap="bindPrintEspData">PrintEspData</button>
 </view>

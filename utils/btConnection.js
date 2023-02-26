@@ -1,10 +1,10 @@
 export class BtConnection {
-  constructor() {
+  constructor(writeUUID="", notifyUUID="", serviceUUID="", deviceName="") {
     this.serviceUUID = [] //主 service 的 uuid 列表
-    this.writeUUID = ("").toUpperCase(); //写读 UUID
-    this.notifyUUID = ("00002A37-0000-1000-8000-00805F9B34FB").toUpperCase(); //notify UUID
-    this.filterServiceUUID = ("0000180D-0000-1000-8000-00805F9B34FB").toUpperCase(); //过滤获取到的服务uuid(有些会返回多条数据)
-    this.filterDeviceName = "Ethera band-0010026"; //设备名称
+    this.writeUUID = writeUUID.toUpperCase(); //写读 UUID
+    this.notifyUUID = notifyUUID.toUpperCase(); //notify UUID
+    this.filterServiceUUID = serviceUUID.toUpperCase(); //过滤获取到的服务uuid(有些会返回多条数据)
+    this.filterDeviceName = deviceName; //设备名称
 
     this.macAddress = ""; //保存得到mac地址
     this.flagFromTypes = ''; //来源类型
@@ -19,10 +19,38 @@ export class BtConnection {
     this.code = -1;
     this.isnotExist = true
 
+    this.heartrateStorageMaxLen = 30
+    this.heartrateData = []
 
+    this.espData = ""
 
     console.log('initing bluetooth')
     wx.openBluetoothAdapter()
+  }
+
+  setFlagFromType(flag){
+    this.flagFromTypes = flag
+  }
+
+  writeHeartrateData(heartrateData){
+    let data = parseInt(heartrateData, 16)
+    this.heartrateData.push([new Date(), data])
+    if(this.heartrateData.length > this.heartrateStorageMaxLen){
+      this.heartrateData.pop()
+    }
+  }
+
+  getHeartrateData(){
+    return this.heartrateData
+  }
+
+  writeEspData(espData){
+    this.espData = this.hex2a(espData)
+    console.log("esp data wrote\n" + this.espData)
+  }
+
+  getEspData(){
+    return this.espData
   }
 
   openAdaptor() {
@@ -156,6 +184,7 @@ export class BtConnection {
       console.log(`device ${res.deviceId} state has changed, connected: ${res.connected}`)
       if (res.connected == false) {
         console.log("连接意外断开等****", this._deviceId);
+        this.isnotExist = true
         this._deviceId = '';
         if (this.flagFromTypes == 1 && this.flagFromTypes == 2) {
           // asddErrorCallback(1010, "");
@@ -203,8 +232,9 @@ export class BtConnection {
           let item = res.characteristics[i]
           var itemUUID = item.uuid.toUpperCase(); //转大写
           console.log(`checking item: ${itemUUID}`)
+          console.log(that.notifyUUID)
           //read操作
-          if (item.properties.read && itemUUID == this.writeUUID) {
+          if (item.properties.read && itemUUID == that.writeUUID) {
             wx.readBLECharacteristicValue({
               deviceId: deviceId,
               serviceId: serviceId,
@@ -213,14 +243,16 @@ export class BtConnection {
           }
 
           //write操作
-          if (item.properties.write && itemUUID == this.writeUUID) {
+          if (item.properties.write && itemUUID == that.writeUUID) {
             console.log("写 特征值 -----------------------" + item.uuid);
-            this._deviceId = deviceId
-            this._serviceId = serviceId
-            this._characteristicId = item.uuid
+            that._deviceId = deviceId
+            that._serviceId = serviceId
+            that._characteristicId = item.uuid
 
+
+            console.log("发送 信息查询指令 【根据需求捏】")
             //发送 信息查询指令 【根据需求】
-            if (this.flagFromTypes == 1 || this.flagFromTypes == 2) { //血压、秤
+            if (that.flagFromTypes == 1 || that.flagFromTypes == 2) { //血压、秤
               console.log("发送 信息查询指令 【根据需求】")
               // handleTimeToHex();
             }
@@ -228,7 +260,7 @@ export class BtConnection {
 
 
           //notify操作，注意调用监听特征值变化
-          if (this.notifyUUID == itemUUID) {
+          if (that.notifyUUID == itemUUID) {
             console.log('notify service start processing')
             if (item.properties.notify || item.properties.indicate) {
               console.log('调用notifyBLECharacteristicValueChange前', item.uuid);
@@ -239,7 +271,7 @@ export class BtConnection {
                 state: true,
                 success(res) {
                   console.log('notification通知数据', res);
-                  status = true;
+                  that.status = true;
                   // wx.hideLoading();
                 },
                 fail(res) {
@@ -263,25 +295,73 @@ export class BtConnection {
 
       console.log("操作类型:" + that.action_type);
 
+      console.log("设备原始数据--->", res.value)
       var resData = that.ab2hex(res.value); //转16进制
 
-      // // Convert the buffer to a hex string
-      // let resData = Array.from(new Uint8Array(res.value))
-      //   .map(byte => byte.toString(16).padStart(2, '0'))
-      //   .join('');
+      console.log("设备返回数据--->", resData); 
+      that.data = resData
       
-
-
-      console.log("设备返回数据--->", resData); //5d0000000001be304d
-
       // 判断不同类型处理数据
-      if (that.flagFromTypes == 1) {
-        console.log('开始调用 血压计=====》处理返回的数据');
-        // bloodPressureObj.filterStr(resData);
+      switch(that.flagFromTypes){
+        case "h":
+          console.log('writing heartrate data')
+          that.writeHeartrateData(resData)
+          break
+        case "e":
+          console.log('writing esp data')
+          that.writeEspData(resData)
+          break
       }
 
     })
   }
+
+  /**
+   * 写入数据
+   */
+  writeData(hex, action = '') {
+    if (!this.status) {
+      console.error("status err")
+      return;
+    }
+
+    if (!this._deviceId) {
+      // asddWriteErrors('w');
+      console.error("_deviceId err")
+      return;
+    }
+
+    setTimeout(() => {
+      //类型转换
+      var enDataBuf = new Uint8Array(hex);
+      var buffer1 = enDataBuf.buffer
+      console.log("发送内容长度：", buffer1.byteLength)
+      console.log('写入的数据：' + this._deviceId + '服务serviceId---》' + this._serviceId + '特征characteristicId---》' + this._characteristicId);
+
+      wx.writeBLECharacteristicValue({
+        deviceId: this._deviceId,
+        serviceId: this._serviceId,
+        characteristicId: this._characteristicId,
+        value: buffer1,
+        success: (res) => {
+          wx.hideLoading();
+          console.log("写数据返回结果", res.errMsg);
+
+          //项目需求： 发送某个指令后的需要处理回调
+          if (action == 'lastZero') {
+            console.log('最后一次写入00需执行回调========》');
+            //回调 目的: 执行调用提交接口
+            // eyeCareObj.eyeCareCallback();
+          }
+        },
+        fail(res) {
+          console.log("写数据失败..", res);
+          // asddErrorCallback(res.errCode, "");
+        }
+      })
+    }, 1000)
+  }
+
 
 
   /**
@@ -318,5 +398,13 @@ export class BtConnection {
     )
     return hexArr.join('');
   }
+
+  hex2a(hexx) {
+    var hex = hexx.toString();//force conversion
+    var str = '';
+    for (var i = 0; i < hex.length; i += 2)
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return str;
+}
 
 }
