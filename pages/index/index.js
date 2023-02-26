@@ -1,17 +1,21 @@
 // index.js
 // 获取应用实例
 const app = getApp()
-import {BtConnection} from '../../utils/btConnection'
-import {formatTime} from '../../utils/util'
+import {
+  BtConnection
+} from '../../utils/btConnection'
+import {
+  formatTime
+} from '../../utils/util'
 import PatientData from '../../utils/patientdata.js'
 import fetch from '../../utils/fetch.js'
 
 const btConnection = new BtConnection(
-    "",
-    "00002A37-0000-1000-8000-00805F9B34FB",
-    "0000180D-0000-1000-8000-00805F9B34FB",
-    "Ethera band-0010026"
-  )
+  "",
+  "00002A37-0000-1000-8000-00805F9B34FB",
+  "0000180D-0000-1000-8000-00805F9B34FB",
+  "Ethera band-0010026"
+)
 btConnection.setFlagFromType('h')
 
 const espConnection = new BtConnection(
@@ -27,7 +31,10 @@ Page({
     hr: 0,
     step: 0,
     al: 0,
-    song: " ",
+    poster: '',
+    name: '',
+    author: '',
+    src: '',
     heartrateData: [0, 0],
     espDataArr: [],
     espData: [],
@@ -36,10 +43,10 @@ Page({
     canIUseGetUserProfile: false,
     canIUseOpenData: wx.canIUse('open-data.type.userAvatarUrl') && wx.canIUse('open-data.type.userNickName'), // 如需尝试获取用户信息可改为false
   },
-  bindPrintHeartrateData(){
+  bindPrintHeartrateData() {
     console.log(btConnection.getHeartrateData())
   },
-  bindPrintEspData(){
+  bindPrintEspData() {
     console.log(espConnection.getEspData())
   },
   // 事件处理函数
@@ -57,59 +64,85 @@ Page({
   bindStartDiscovery() {
     btConnection.openAdaptor()
     btConnection.startBluetoothDevicesDiscovery()
-    
+
   },
   bindEndDiscovery() {
     btConnection.stopBluetoothDevicesDiscovery()
   },
-  bindDiscoverEsp(){
+  bindDiscoverEsp() {
     espConnection.openAdaptor()
     espConnection.startBluetoothDevicesDiscovery()
     console.log("esp discovered")
   },
   runAnalysis() {
     const data = this.getPatientInfo()
-    const anxieties = this.getAnxiety(data)
+    const anxieties = 1 //this.getAnxiety(data)
     const domain = "172.187.225.89"
-    const url = "https://" + domain + "/user/stats/detailed"
-    const options = {url: url, data: {id: 1,
-                                      steps: data.step,
-                                      heartrates: data.heartRate,
-                                      anxieties: anxieties},method: 'PATCH'}
+    const url = "http://" + domain + ":8443/user/stats/detailed"
+    console.log(this.data.heartrateData)
+    let heartates = this.data.heartrateData.map(h => [Date.parse(h[0]) / 1000, h[1]])
+    console.log(heartates)
+    const options = {
+      url: url,
+      headers: {'Content-Type': 'application/json'},
+      data: {
+        id: 1,
+        steps: [[1, 1]],
+        heartrates: heartates,
+        anxieties: [[11111, 111111]]
+      },
+      method: 'PATCH'
+    }
     fetch(options)
+      .then(_ => console.log('success'))
+      .catch(_ => {})
   },
 
-  getPatientInfo: function() {
+  getPatientInfo: function () {
     const patient = new PatientData()
     const resistance = patient.getResistance()
 
     const totolStep = patient.getTotolStepNum()
     const step = patient.getStepNum()
     const heartRate = patient.getHeartRate()
-    const data = {totolStep: totolStep, step: step, heartRate: heartRate, resistance: resistance}
+    const data = {
+      totolStep: totolStep,
+      step: step,
+      heartRate: heartRate,
+      resistance: resistance
+    }
     return data
   },
 
   runModel(data) {
-    const classical = [["Cello Suite No.1 in G major", "Johann Sebastian Bach"], ["Mozart Sonatas K.448", "Mozart"], ["A comme amour", "Richard Clayderman"]]
-    const relaxing = [["Love story", "Taylor Swift"], ["Shape of You", "Ed Sheeran"], ["Senorita", "Shawn Mendes & Camila Cacollo"]]
-    const pop = [["Believer", "Imagine Dragon"], ["Viva la vida", "Cold Play"], ["Rolling in the deep", "Adele"]]
+    const classical = [
+      ["Cello Suite No.1 in G major", "Johann Sebastian Bach"],
+      ["Mozart Sonatas K.448", "Mozart"],
+      ["A comme amour", "Richard Clayderman"]
+    ]
+    const relaxing = [
+      ["Love story", "Taylor Swift"],
+      ["Shape of You", "Ed Sheeran"],
+      ["Senorita", "Shawn Mendes & Camila Cacollo"]
+    ]
+    const pop = [
+      ["Believer", "Imagine Dragon"],
+      ["Viva la vida", "Cold Play"],
+      ["Rolling in the deep", "Adele"]
+    ]
     console.log(data.step, data.heratRate, data.resistance)
     const step = data.step
     const heartRate = data.heartRate
     const resistance = data.resistance
-    
+
 
     if (heartRate > 80 && step > 600) {
       return pop[Math.floor(Math.random() * 3)]
-    }
-    else if (heartRate > 80 && step <= 600) {
+    } else if (heartRate > 80 && step <= 600) {
       return relaxing[Math.floor(Math.random() * 3)]
-    }
-    else if (heartRate > 80 && resistance >= 0.5) {
+    } else if (heartRate > 80 && resistance >= 0.5) {
       return relaxing[Math.floor(Math.random() * 3)]
-    }
-    else {
+    } else {
       return classical[Math.floor(Math.random() * 3)]
     }
   },
@@ -118,17 +151,13 @@ Page({
     var anxiety = 0
     if (data.resistance >= 0 && data.resistance < 0.2) {
       anxiety = 0
-    }
-    else if (data.resistance >= 0.2 && data.resistance < 0.4) {
+    } else if (data.resistance >= 0.2 && data.resistance < 0.4) {
       anxiety = 1
-    }
-    else if (data.resistance >= 0.4 && data.resistance < 0.6) {
+    } else if (data.resistance >= 0.4 && data.resistance < 0.6) {
       anxiety = 2
-    }
-    else if (data.resistance >= 0.6 && data.resistance < 0.8) {
+    } else if (data.resistance >= 0.6 && data.resistance < 0.8) {
       anxiety = 3
-    }
-    else {
+    } else {
       anxiety = 4
     }
   },
@@ -140,28 +169,35 @@ Page({
       hr: data.heartRate,
       step: data.step,
       al: anxiety,
-      song: songName,
+      name: songName[0],
+      author: songName[1],
+      poster: "../../" + songName[0] + ".png",
+      src: "../../" + songName[0] + ".mp3",
       espData: 0,
       heartrateData: [0, 0]
     })
     setInterval(() => {
       console.log("esp", espConnection.status, "hr", btConnection.status)
-      if(espConnection.status){
+      if (espConnection.status) {
         let data = espConnection.getEspData()
         data = data.split('@')
         let newArr = this.data.espDataArr
         data.forEach(d => newArr.push(d))
-        this.setData({espData: data, espDataArr: newArr})
+        this.setData({
+          espData: data,
+          espDataArr: newArr
+        })
         console.log(this.data.espDataArr)
         espConnection.writeData(0x31)
       }
       console.log("esp", espConnection.status, "hr", btConnection.status)
-      if(btConnection.status){
+      if (btConnection.status) {
         let hData = btConnection.getHeartrateData()
-        hData = hData[hData.length - 1]
         // hData[0] = formatTime(hData[0])
-        console.log(hData[1])
-        this.setData({heartrateData: hData, hr: hData[1]})
+        this.setData({
+          heartrateData: hData,
+          hr: hData[hData.length - 1][1]
+        })
       }
       console.log("esp", espConnection.status, "hr", btConnection.status)
       console.log("loop!")

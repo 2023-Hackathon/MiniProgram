@@ -10,9 +10,7 @@
   <view>
     Anxiety level: {{al}}
   </view>
-  <view>
-    Song: {{song}}
-  </view>
+  <audio name="{{name}}" author="{{author}}" src="{{src}}" controls></audio>
   <!-- <button bindtap="bindOpenBtTap">Open bluetooth</button> -->
   <button bindtap="bindStartDiscovery">start discover band</button>
   <button bindtap="runAnalysis">Run Analysis</button>
