@@ -1,5 +1,5 @@
 // logs.js
-const util = require('../../utils/util.js')
+import utils from '../../utils/util'
 
 Page({
   data: {
