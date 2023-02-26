@@ -1,10 +1,29 @@
 <!--index.wxml-->
 <view class="container">
+  
+  <view>
+    HeartRate: {{hr}}
+  </view>
+  <view>
+    Number of steps: {{step}}
+  </view>
+  <view>
+    Anxiety level: {{al}}
+  </view>
+  <view>
+    Song: {{song}}
+  </view>
   <!-- <button bindtap="bindOpenBtTap">Open bluetooth</button> -->
   <button bindtap="bindStartDiscovery">start discover band</button>
-  <button bindtap="bindDiscoverEsp">start discover esp</button>
+  <button bindtap="runAnalysis">Run Analysis</button>
+  <!-- <button bindtap="bindDiscoverEsp">start discover esp</button> -->
   <!-- <button bindtap="bindEndDiscovery">end discovery</button> -->
-  <!-- <button bindtap="bindCloseBtTap">Close Bluetooth</button> -->
+  <!-- <button bindtap="bindCloseBtTap">Close HR band</button>
   <button bindtap="bindPrintHeartrateData">PrintHeartrateData</button>
-  <button bindtap="bindPrintEspData">PrintEspData</button>
+  <button bindtap="bindPrintEspData">PrintEspData</button> -->
+  <!-- <p>esp</p>
+  <p>{{espData}}</p> -->
+
+  <!-- <p>heartrate</p>
+  <p>{{heartrateData[0]}} {{heartrateData[1]}}</p> -->
 </view>

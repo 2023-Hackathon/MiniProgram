@@ -25,6 +25,7 @@ export class BtConnection {
     this.espData = ""
 
     console.log('initing bluetooth')
+    
     wx.openBluetoothAdapter()
   }
 
@@ -34,10 +35,11 @@ export class BtConnection {
 
   writeHeartrateData(heartrateData){
     let data = parseInt(heartrateData, 16)
-    this.heartrateData.push([new Date(), data])
+    
     if(this.heartrateData.length > this.heartrateStorageMaxLen){
       this.heartrateData.pop()
     }
+    this.heartrateData.push([new Date(), data])
   }
 
   getHeartrateData(){
@@ -55,6 +57,7 @@ export class BtConnection {
 
   openAdaptor() {
     console.log('opening bluetooth')
+    this.closeBLEConnection()
     wx.openBluetoothAdapter({
       success: (res) => {
         console.log('openBluetoothAdapter 初始化蓝牙模块是否成功:', res)
@@ -70,10 +73,50 @@ export class BtConnection {
 
   closeAdaptor() {
     this.isnotExist = true
-    console.log('closing bluetooth')
     wx.closeBLEConnection()
     wx.closeBluetoothAdapter()
   }
+
+  /**
+ * 断开蓝牙连接
+ */
+closeBLEConnection() {
+	//停止搜索
+    this.stopBluetoothDevicesDiscovery();
+    console.log("断开与低功耗蓝牙设备的连接。", this.deviceId);
+
+    if (this.deviceId) {
+        wx.closeBLEConnection({
+            deviceId: this.deviceId,
+            success: function(res) {
+                console.log("closeBLEConnection。success", res);
+
+            },
+            fail: function(res) {
+                console.log("closeBLEConnection。fail", res);
+            },
+            complete: function() {
+                this.status = false;
+            }
+        })
+
+        //关闭蓝牙模块
+        wx.closeBluetoothAdapter({
+            success: function(res) {
+                console.log("closeBluetoothAdapter ==>res:", res);
+            },
+            fail: function(error) {
+                console.log("closeBluetoothAdapter ==>error:", error);
+            }
+        })
+    }
+
+    this._discoveryStarted = false;
+    this.isnotExist = true;
+    this._deviceId = '';
+    this.deviceId = '';
+}
+
 
   /**
    * 监听寻找新设备事件

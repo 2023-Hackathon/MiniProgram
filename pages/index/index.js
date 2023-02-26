@@ -2,6 +2,9 @@
 // 获取应用实例
 const app = getApp()
 import {BtConnection} from '../../utils/btConnection'
+import {formatTime} from '../../utils/util'
+import PatientData from '../../utils/patientdata.js'
+import fetch from '../../utils/fetch.js'
 
 const btConnection = new BtConnection(
     "",
@@ -21,9 +24,14 @@ espConnection.setFlagFromType('e')
 
 Page({
   data: {
-    motto: 'Hello World',
-    userInfo: {},
-    hasUserInfo: false,
+    hr: 0,
+    step: 0,
+    al: 0,
+    song: " ",
+    heartrateData: [0, 0],
+    espDataArr: [],
+    espData: [],
+    stepData: [],
     canIUse: wx.canIUse('button.open-type.getUserInfo'),
     canIUseGetUserProfile: false,
     canIUseOpenData: wx.canIUse('open-data.type.userAvatarUrl') && wx.canIUse('open-data.type.userNickName'), // 如需尝试获取用户信息可改为false
@@ -32,7 +40,7 @@ Page({
     console.log(btConnection.getHeartrateData())
   },
   bindPrintEspData(){
-    console.log(btConnection.getEspData())
+    console.log(espConnection.getEspData())
   },
   // 事件处理函数
   bindViewTap() {
@@ -58,10 +66,106 @@ Page({
     espConnection.openAdaptor()
     espConnection.startBluetoothDevicesDiscovery()
     console.log("esp discovered")
+  },
+  runAnalysis() {
+    const data = this.getPatientInfo()
+    const anxieties = this.getAnxiety(data)
+    const domain = "172.187.225.89"
+    const url = "https://" + domain + "/user/stats/detailed"
+    const options = {url: url, data: {id: 1,
+                                      steps: data.step,
+                                      heartrates: data.heartRate,
+                                      anxieties: anxieties},method: 'PATCH'}
+    fetch(options)
+  },
+
+  getPatientInfo: function() {
+    const patient = new PatientData()
+    const resistance = patient.getResistance()
+
+    const totolStep = patient.getTotolStepNum()
+    const step = patient.getStepNum()
+    const heartRate = patient.getHeartRate()
+    const data = {totolStep: totolStep, step: step, heartRate: heartRate, resistance: resistance}
+    return data
+  },
+
+  runModel(data) {
+    const classical = [["Cello Suite No.1 in G major", "Johann Sebastian Bach"], ["Mozart Sonatas K.448", "Mozart"], ["A comme amour", "Richard Clayderman"]]
+    const relaxing = [["Love story", "Taylor Swift"], ["Shape of You", "Ed Sheeran"], ["Senorita", "Shawn Mendes & Camila Cacollo"]]
+    const pop = [["Believer", "Imagine Dragon"], ["Viva la vida", "Cold Play"], ["Rolling in the deep", "Adele"]]
+    console.log(data.step, data.heratRate, data.resistance)
+    const step = data.step
+    const heartRate = data.heartRate
+    const resistance = data.resistance
     
+
+    if (heartRate > 80 && step > 600) {
+      return pop[Math.floor(Math.random() * 3)]
+    }
+    else if (heartRate > 80 && step <= 600) {
+      return relaxing[Math.floor(Math.random() * 3)]
+    }
+    else if (heartRate > 80 && resistance >= 0.5) {
+      return relaxing[Math.floor(Math.random() * 3)]
+    }
+    else {
+      return classical[Math.floor(Math.random() * 3)]
+    }
+  },
+
+  getAnxiety(data) {
+    var anxiety = 0
+    if (data.resistance >= 0 && data.resistance < 0.2) {
+      anxiety = 0
+    }
+    else if (data.resistance >= 0.2 && data.resistance < 0.4) {
+      anxiety = 1
+    }
+    else if (data.resistance >= 0.4 && data.resistance < 0.6) {
+      anxiety = 2
+    }
+    else if (data.resistance >= 0.6 && data.resistance < 0.8) {
+      anxiety = 3
+    }
+    else {
+      anxiety = 4
+    }
   },
   onLoad() {
-    
+    var data = this.getPatientInfo()
+    var anxiety = this.getAnxiety(data)
+    var songName = this.runModel(data)
+    this.setData({
+      hr: data.heartRate,
+      step: data.step,
+      al: anxiety,
+      song: songName,
+      espData: 0,
+      heartrateData: [0, 0]
+    })
+    setInterval(() => {
+      console.log("esp", espConnection.status, "hr", btConnection.status)
+      if(espConnection.status){
+        let data = espConnection.getEspData()
+        data = data.split('@')
+        let newArr = this.data.espDataArr
+        data.forEach(d => newArr.push(d))
+        this.setData({espData: data, espDataArr: newArr})
+        console.log(this.data.espDataArr)
+        espConnection.writeData(0x31)
+      }
+      console.log("esp", espConnection.status, "hr", btConnection.status)
+      if(btConnection.status){
+        let hData = btConnection.getHeartrateData()
+        hData = hData[hData.length - 1]
+        // hData[0] = formatTime(hData[0])
+        console.log(hData[1])
+        this.setData({heartrateData: hData, hr: hData[1]})
+      }
+      console.log("esp", espConnection.status, "hr", btConnection.status)
+      console.log("loop!")
+    }, 1000)
   },
   getUserProfile(e) {
     // 推荐使用wx.getUserProfile获取用户信息，开发者每次通过该接口获取用户个人信息均需用户确认，开发者妥善保管用户快速填写的头像昵称，避免重复弹窗
