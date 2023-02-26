@@ -8,12 +8,12 @@
     Number of steps: {{step}}
   </view>
   <view>
-    Anxiety level: {{al}}
+    Anxiety level: {{al + 3}}
   </view>
   <audio name="{{name}}" author="{{author}}" src="{{src}}" controls></audio>
   <!-- <button bindtap="bindOpenBtTap">Open bluetooth</button> -->
-  <button bindtap="bindStartDiscovery">start discover band</button>
-  <button bindtap="runAnalysis">Run Analysis</button>
+  <button bindtap="bindStartDiscovery">Connect wearables</button>
+  <button bindtap="runAnalysis" >Start therapy session</button>
   <!-- <button bindtap="bindDiscoverEsp">start discover esp</button> -->
   <!-- <button bindtap="bindEndDiscovery">end discovery</button> -->
   <!-- <button bindtap="bindCloseBtTap">Close HR band</button>
