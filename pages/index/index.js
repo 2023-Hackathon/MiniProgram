@@ -136,7 +136,7 @@ Page({
 
 
     if (heartRate > 80 && step > 600) {
-      return pop[Math.floor(Math.random() * 3)]
+      return pop[0]
     } else if (heartRate > 80 && step <= 600) {
       return relaxing[Math.floor(Math.random() * 3)]
     } else if (heartRate > 80 && resistance >= 0.5) {
@@ -204,7 +204,7 @@ Page({
   },
   getUserProfile(e) {
     wx.getUserProfile({
-      desc: '展示用户信息', 
+      desc: 'info', 
       success: (res) => {
         console.log(res)
         this.setData({
