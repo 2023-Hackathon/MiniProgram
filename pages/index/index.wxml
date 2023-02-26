@@ -17,6 +17,9 @@
       <text class="userinfo-nickname">{{userInfo.nickName}}</text>
     </block>
   </view>
+  <view>
+    <navigator url="/pages/analysis/analysis" hover-class="navigator-hover">Generate therapy</navigator>
+  </view>
   <view class="usermotto">
     <button bindtap="openBT">test bluetooth</button>
     <text class="user-motto">{{motto}}</text>

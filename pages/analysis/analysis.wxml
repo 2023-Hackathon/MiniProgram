@@ -1,0 +1,17 @@
+<!--pages/analysis/analysis.wxml-->
+<view class="container">
+  <button bindtap="runAnalysis">Run Analysis</button>
+  <view>
+    HeartRate: {{hr}}
+  </view>
+  <view>
+    Number of steps: {{step}}
+  </view>
+  <view>
+    Anxiety level: {{al}}
+  </view>
+  <view>
+    Song: {{song}}
+  </view>
+  
+</view>
