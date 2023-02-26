@@ -10,7 +10,10 @@ Page({
     hr: 0,
     step: 0,
     al: 0,
-    song: " "
+    poster: '',
+    name: '',
+    author: '',
+    src: ''
   },
 
   /**
@@ -24,7 +27,10 @@ Page({
       hr: data.heartRate,
       step: data.step,
       al: anxiety,
-      song: songName
+      name: songName[0],
+      author: songName[1],
+      poster: "../../" + songName[0] + ".png",
+      src: "../../" + songName[0] + ".mp3"
     })
   },
   /**

@@ -10,8 +10,5 @@
   <view>
     Anxiety level: {{al}}
   </view>
-  <view>
-    Song: {{song}}
-  </view>
-  
+  <audio name="{{name}}" author="{{author}}" src="{{src}}" controls></audio>
 </view>
