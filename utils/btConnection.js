@@ -252,10 +252,12 @@ export class BtConnection {
 
             console.log("发送 信息查询指令 【根据需求捏】")
             //发送 信息查询指令 【根据需求】
-            if (that.flagFromTypes == 1 || that.flagFromTypes == 2) { //血压、秤
+            if (that.flagFromTypes === 'e') { //血压、秤
               console.log("发送 信息查询指令 【根据需求】")
-              // handleTimeToHex();
+              that.status = true
+              that.writeData(0x31)
             }
+            
           }
 
 
@@ -320,6 +322,7 @@ export class BtConnection {
    * 写入数据
    */
   writeData(hex, action = '') {
+    
     if (!this.status) {
       console.error("status err")
       return;
@@ -331,10 +334,16 @@ export class BtConnection {
       return;
     }
 
+    
     setTimeout(() => {
+      console.log(99999980908908070789878696758645)
+      console.log(hex)
+
       //类型转换
-      var enDataBuf = new Uint8Array(hex);
+      var enDataBuf = new Uint8Array([hex]);
+      console.log(enDataBuf)
       var buffer1 = enDataBuf.buffer
+      console.log(buffer1)
       console.log("发送内容长度：", buffer1.byteLength)
       console.log('写入的数据：' + this._deviceId + '服务serviceId---》' + this._serviceId + '特征characteristicId---》' + this._characteristicId);
 

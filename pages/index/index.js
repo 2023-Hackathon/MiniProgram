@@ -58,7 +58,6 @@ Page({
     espConnection.openAdaptor()
     espConnection.startBluetoothDevicesDiscovery()
     console.log("esp discovered")
-    espConnection.writeData(0x31)
     
   },
   onLoad() {
